@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - A Pen by Ramez Hassan</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <style>
+    html, body {
+      padding: 0;
+      margin: 0;
+      height: 100vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #header {
+      background-color: red;
+      padding: 10px;
+      color: white;
+      font-weight: bold;
+      text-align: left;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    #districtFilter, #hazardFilter {
+      flex-basis: 50%;
+      display: flex;
+      align-items: center;
+      padding: 5px;
+    }
+    
+    #mainContainer {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    #contentContainer {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    .mapView {
+      flex-basis: calc(33% - 20px);
+      margin: 10px;
+      height: 1000px !important; 
+      outline: 10px solid White;
+      border: 10px solid white;
+    }
+    #mapContainer {
+      flex: 1; 
+      display: flex;
+      flex-wrap: wrap;
+      overflow: hidden;
+    }
+    
+    
+    
+    #infoBoxes {
+      width: 30%;
+      background-color: #f5f5f5;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #hazardBox, #durationBox {
+      margin-bottom: 10px;
+      background-color: #f5f5f5;
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+    
+    select {
+      width: 200px;
+      padding: 5px;
+      margin-top: 5px;
+    }
+    
+    #header-title {
+      margin-left: 1rem;
+      margin-right: 1rem;
+    }
+    
+    #header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: left;
+    }
+    #symbol{
+      background:white;
+      border-radius:10px;
+      margin-top:14px; 
+    }
+    
+    #box1 , #box2{
+      border: 1px solid black;
+      padding:10px;
+      height:40vh;
+      background:white;
+    }
+    #box2{
+      margin-top:10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div id="header-content">
+      <div id="symbol"><a href="link address"><img  src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" width=30 height=30 ></a></div>
+      <div id="districtFilter">
+        <select id="districtSelect">
+          <option value="all">All Districts</option>
+        </select>
+      </div>
+      <div id="hazardFilter">
+        <select id="hazardSelect">
+          <option value="all">All Hazard Events</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div style="min-height:100vh;" id="mainContainer">
+    <div id="contentContainer">
+      <div id="mapContainer">
+        <div id="viewDiv" class="mapView"></div>
+        <div id="viewDiv2" class="mapView"></div>
+        <div id="viewDiv3" class="mapView"></div>
+      </div>
+      <div id="infoBoxes">
+        <div id="box1">
+          <div id="hazardTitle">Key figures related to selected hazards</div>
+        </div>
+        <div id="box2">
+          <div id="durationTitle">Narrative: </div>
+          <div id="durationValue">Source:</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+</head>
+<body>
+  <div id="mapContainer">
+    <div id="viewDiv" class="mapView"></div>
+    <div id="viewDiv2" class="mapView"></div>
+    <div id="viewDiv3" class="mapView"></div>
+  </div>
+<title>Calcite Components: Create a mapping app</title>
+  <script src="https://js.arcgis.com/calcite-components/1.6.0/calcite.esm.js" type="module"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/calcite-components/1.6.0/calcite.css" />
+  <script src="https://js.arcgis.com/4.27/"></script>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.27/esri/themes/light/main.css" />
+  <script>
+    require([
+      "esri/WebMap",
+      "esri/views/MapView",
+      "esri/widgets/Bookmarks",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/LayerList",
+      "esri/widgets/Legend",
+      "esri/widgets/Print"
+    ], function (WebMap, MapView, Bookmarks, BasemapGallery, LayerList, Legend, Print) {
+      const webmapIds = [
+        "ba87d238c2b645fa88178224aaf4aa6e",
+        "15d0c11ce9f343dc9595096598c52246",
+        "14c01d3a1f4d4eb69b60078157c61b58"
+      ];
+
+      const viewDivs = ["viewDiv", "viewDiv2", "viewDiv3"];
+      const views = [];
+
+      for (let i = 0; i < webmapIds.length; i++) {
+        const map = new WebMap({
+          portalItem: { id: webmapIds[i] }
+        });
+
+        const view = new MapView({
+          map: map,
+          container: viewDivs[i],
+          center: [35.8435, 33.8547],
+          zoom: 9
+          
+        });
+
+        view.ui.move("zoom", "bottom-right");
+        views.push(view); 
+        views.forEach(function(view) {
+        view.on("pointer-drag", function() {
+          synchronizeViews(view);
+        });
+
+        view.watch("zoom", function() {
+          synchronizeViews(view);
+        });
+      });
+        function synchronizeViews(currentView) {
+        views.forEach(function(view) {
+          if (view !== currentView) {
+            view.extent = currentView.extent;
+          }
+        });
+      }
+        
+        const basemaps = new BasemapGallery({
+          view,
+          container: `${viewDivs[i]}-basemaps-container`
+        });
+        const bookmarks = new Bookmarks({
+          view,
+          container: `${viewDivs[i]}-bookmarks-container`
+        });
+        const layerList = new LayerList({
+          view,
+          selectionEnabled: true,
+          container: `${viewDivs[i]}-layers-container`
+        });
+        const legend = new Legend({
+          view,
+          container: `${viewDivs[i]}-legend-container`
+        });
+        const print = new Print({
+          view,
+          container: `${viewDivs[i]}-print-container`
+        });
+
+        map.when(() => {
+          const { title, description, thumbnailUrl, avgRating } = map.portalItem;
+          const headerTitle = document.querySelector(`#${viewDivs[i]}-header-title`);
+          const itemDescription = document.querySelector(`#${viewDivs[i]}-item-description`);
+          const itemThumbnail = document.querySelector(`#${viewDivs[i]}-item-thumbnail`);
+          const itemRating = document.querySelector(`#${viewDivs[i]}-item-rating`);
+
+          if (headerTitle) headerTitle.textContent = title;
+          if (itemDescription) itemDescription.innerHTML = description;
+          if (itemThumbnail) itemThumbnail.src = thumbnailUrl;
+          if (itemRating) itemRating.value = avgRating;
+        });
+      }
+    });
+  </script>
+  </style>
+</head>
+</body>
+</html>
+<!-- partial -->
+  
+</body>
+</html>
